@@ -34,19 +34,22 @@ if __name__ == '__main__':
     dataset_size = len(dataset)    # get the number of images in the dataset.
     print('The number of training images = %d' % dataset_size)
 
+    save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+    if opt.continue_train and opt.use_wandb:
+        os.makedirs(save_dir,exist_ok=True)
+        for name in ['latest_net_G_B.pth','latest_net_G_A.pth','latest_net_D_B.pth','latest_net_D_A.pth']:
+            try:
+                f = wandb.restore(name)
+                os.rename(f,os.path.join(save_dir,name) )
+            except ValueError(e):
+                print(e)
+
     model = create_model(opt)      # create a model given opt.model and other options
     model.setup(opt)               # regular setup: load and print networks; create schedulers
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     total_iters = 0                # the total number of training iterations
     
-    if opt.continue_train and visualizer.use_wandb:
-        os.makedirs(visualizer.save_dir,exist_ok=True)
-        for name in ['latest_net_G_B.pth','latest_net_G_A.pth','latest_net_D_B.pth','latest_net_D_A.pth']:
-            try:
-                f = wandb.restore(name)
-                os.rename(f,os.path.join(visualizer.save_dir,name) )
-            except ValueError(e):
-                print(e)
+
 
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
@@ -87,7 +90,7 @@ if __name__ == '__main__':
             model.save_networks('latest')
             model.save_networks(epoch)
             if visualizer.use_wandb:
-                wandb.save(os.path.join(visualizer.save_dir,"latest*") )
+                wandb.save(os.path.join(save_dir,"latest*") )
                 
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))

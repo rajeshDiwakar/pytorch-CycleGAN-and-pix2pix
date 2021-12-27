@@ -40,11 +40,11 @@ if __name__ == '__main__':
     total_iters = 0                # the total number of training iterations
     
     if opt.continue_train and visualizer.use_wandb:
-        os.makedirs('checkpoints',exist_ok=True)
+        os.makedirs(visualizer.save_dir,exist_ok=True)
         for name in ['latest_net_G_B.pth','latest_net_G_A.pth','latest_net_D_B.pth','latest_net_D_A.pth']:
             try:
                 f = wandb.restore(name)
-                os.rename(f,'checkpoints/%s'%name)
+                os.rename(f,os.path.join(visualizer.save_dir,name) )
             except ValueError(e):
                 print(e)
 

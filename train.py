@@ -18,11 +18,15 @@ See options/base_options.py and options/train_options.py for more training optio
 See training and test tips at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/tips.md
 See frequently asked questions at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/qa.md
 """
-import time
+import time, os
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
+try:
+    import wandb
+except ImportError:
+    pass
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
@@ -34,6 +38,12 @@ if __name__ == '__main__':
     model.setup(opt)               # regular setup: load and print networks; create schedulers
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     total_iters = 0                # the total number of training iterations
+    
+    if opt.continue_train and visualizer.use_wandb:
+        os.makedirs('checkpoints',exist_ok=True)
+        for name in ['latest_net_G_B.pth','latest_net_G_A.pth','latest_net_D_B.pth','latest_net_D_A.pth']:
+            f = wandb.restore(name)
+            os.rename(f,'checkpoints/%s'%name)
 
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
@@ -73,5 +83,8 @@ if __name__ == '__main__':
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
             model.save_networks('latest')
             model.save_networks(epoch)
+            if visualizer.use_wandb:
+                wandb.save("checkpoints/latest*")
+                
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))

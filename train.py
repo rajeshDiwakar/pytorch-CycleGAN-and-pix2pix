@@ -116,7 +116,7 @@ def download_checkpoints(parent_id,checkpoints,root_dir='outdir'):
     for checkpoint in checkpoints:
         ckpt_path = os.path.join(root_dir,checkpoint)
         for f in file_list:
-            if f['title'].lower() == checkpoint:
+            if f['title'].lower() == checkpoint.lower():
                 file_id = f['id']
                 file = drive.CreateFile({'id': file_id})
                 file.GetContentFile(ckpt_path)

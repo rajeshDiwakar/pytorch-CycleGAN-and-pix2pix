@@ -41,7 +41,7 @@ if __name__ == '__main__':
             try:
                 f = wandb.restore(name)
                 os.rename(f,os.path.join(save_dir,name) )
-            except ValueError(e):
+            except ValueError as e:
                 print(e)
 
     model = create_model(opt)      # create a model given opt.model and other options

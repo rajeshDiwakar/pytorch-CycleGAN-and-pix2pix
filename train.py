@@ -42,8 +42,11 @@ if __name__ == '__main__':
     if opt.continue_train and visualizer.use_wandb:
         os.makedirs('checkpoints',exist_ok=True)
         for name in ['latest_net_G_B.pth','latest_net_G_A.pth','latest_net_D_B.pth','latest_net_D_A.pth']:
-            f = wandb.restore(name)
-            os.rename(f,'checkpoints/%s'%name)
+            try:
+                f = wandb.restore(name)
+                os.rename(f,'checkpoints/%s'%name)
+            except ValueError(e):
+                print(e)
 
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch

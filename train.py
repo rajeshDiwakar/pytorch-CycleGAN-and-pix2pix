@@ -87,7 +87,7 @@ if __name__ == '__main__':
             model.save_networks('latest')
             model.save_networks(epoch)
             if visualizer.use_wandb:
-                wandb.save("checkpoints/latest*")
+                wandb.save(os.path.join(visualizer.save_dir,"latest*") )
                 
 
         print('End of epoch %d / %d \t Time Taken: %d sec' % (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))

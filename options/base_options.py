@@ -1,5 +1,5 @@
 import argparse
-import os
+import os,time
 from util import util
 import torch
 import models
@@ -56,6 +56,8 @@ class BaseOptions():
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
         parser.add_argument('--pid',default='',type=str,help='drive parent id')
+        max_duration = int(9*3600-10*60-(time.time()-int(os.environ.get('tstart',0)) ))
+        parser.add_argument('--max_duration',type=int,default=max_duration)
         self.initialized = True
         return parser
 

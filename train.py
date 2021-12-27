@@ -39,7 +39,7 @@ if not os.path.isfile('mycreds.txt'):
 
         # {"access_token": "ya29.a0AfH6SMCDGn8XAOVlzeT47aIMf7QlauIfWz3G9fXrRTyX0JgSllcpHrAIuj6s6zqNTI0kK46c4LmVQp2svHpCSltdQrSgLo-74UtFWv4mdUX0Rnt5TxM7I_OaewjmLl6vH8wmrk1bccDAWBY_-vTeBI-eEedfSNRQu4Mc", "client_id": "883051571054-2e0bv2mjqra6i3cd6c915hkjgtdutct0.apps.googleusercontent.com", "client_secret": "NmzemQWSeUm_WWTbmUJi5xt7", "refresh_token": "1//0gE7zkyCPJ4RpCgYIARAAGBASNwF-L9IrISJx8AG8doLKF1C8RMbuvkqS6BsxGXaYJfqlB-RbrtmIESmVIA2krp-rK-Ylm26klmU", "token_expiry": "2020-08-09T09:46:00Z", "token_uri": "https://oauth2.googleapis.com/token", "user_agent": null, "revoke_uri": "https://oauth2.googleapis.com/revoke", "id_token": null, "id_token_jwt": null, "token_response": {"access_token": "ya29.a0AfH6SMCDGn8XAOVlzeT47aIMf7QlauIfWz3G9fXrRTyX0JgSllcpHrAIuj6s6zqNTI0kK46c4LmVQp2svHpCSltdQrSgLo-74UtFWv4mdUX0Rnt5TxM7I_OaewjmLl6vH8wmrk1bccDAWBY_-vTeBI-eEedfSNRQu4Mc", "expires_in": 3599, "scope": "https://www.googleapis.com/auth/drive", "token_type": "Bearer"}, "scopes": ["https://www.googleapis.com/auth/drive"], "token_info_uri": "https://oauth2.googleapis.com/tokeninfo", "invalid": false, "_class": "OAuth2Credentials", "_module": "oauth2client.client"}
 
-
+app_start = time.time()
 gauth = GoogleAuth()
 # Try to load saved client credentials
 gauth.LoadCredentialsFile("mycreds.txt")
@@ -158,13 +158,31 @@ if __name__ == '__main__':
     total_iters = 0                # the total number of training iterations
 
 
-
+    unsaved_data = False
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
         visualizer.reset()              # reset the visualizer: make sure it saves the results to HTML at least once every epoch
         model.update_learning_rate()    # update learning rates in the beginning of every epoch.
+
+        if opt.max_duration and time.time()-app_start>opt.max_duration:
+            if unsaved_data:
+                print('Running out of time. saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
+                model.save_networks('latest')
+                model.save_networks(epoch)
+                # if visualizer.use_wandb:
+                #     wandb.save(os.path.join(save_dir,"*.pth") )
+                unsaved_data = False
+                if opt.pid:
+                    try:
+                        checkpoints = glob.glob(os.path.join(save_dir,'latest*.pth'))
+                        upload_to_drive(checkpoints,opt.pid)
+                    except Exception as e:
+                        print('error while uploading to drive\n%s'%str(e))
+            break
+
+        unsaved_data = True
         for i, data in enumerate(dataset):  # inner loop within one epoch
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
@@ -199,7 +217,7 @@ if __name__ == '__main__':
             model.save_networks(epoch)
             # if visualizer.use_wandb:
             #     wandb.save(os.path.join(save_dir,"*.pth") )
-
+            unsaved_data = False
             if opt.pid:
                 try:
                     checkpoints = glob.glob(os.path.join(save_dir,'latest*.pth'))
